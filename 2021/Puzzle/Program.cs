@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Puzzle
 {
@@ -25,15 +26,151 @@ namespace Puzzle
             // Console.WriteLine($"Answer: {result}");
 
             // day 3 #2            
-            Console.WriteLine("Calculate Oxygen: ");
-            var oxygen = calulateValues(inputs, 1, inputs[0].Length - 1, true);
-            Console.WriteLine("Calculate CO2: ");
-            var co2 = calulateValues(inputs, 1, inputs[0].Length - 1, false);
-            Console.WriteLine($"Answer: {oxygen} * {co2} = {oxygen * co2}  ");
+            //Console.WriteLine("Calculate Oxygen: ");
+            //var oxygen = calulateValues(inputs, 1, inputs[0].Length - 1, true);
+            //Console.WriteLine("Calculate CO2: ");
+            //var co2 = calulateValues(inputs, 1, inputs[0].Length - 1, false);
+            //Console.WriteLine($"Answer: {oxygen} * {co2} = {oxygen * co2}  ");
+
+            // day 4 #1 #2
+            result = getFinalScore(inputs);
+            Console.WriteLine($"Answer: {result}");
         }
 
-        // day 3 #2
+        // day 4 #1 #2
 
+        struct LineStruct
+        {
+            public bool LineCompleted()
+            {
+                if( Line ==null)
+                    return false;
+                return Line.Count == 0;
+            }
+
+            public bool MarkNumber(int nr)
+            {
+                return Line.Remove(nr);
+            }
+
+            public List<int> Line; 
+        }
+
+        struct BoardStruct
+        {
+            public int Index;
+
+            public int Dimension;
+
+            public int Sum()
+            {
+                if(Lines == null)
+                    return 0;
+
+                int sum = 0;
+                for(int b=0; b < Dimension; b++)
+                    foreach(var nr in Lines[b].Line)
+                    {
+                        sum += nr;
+                    }
+                return sum;
+            }
+
+            public bool IsBingo(int nr)
+            {
+                bool lineComplete = false;
+                foreach(var line in Lines)
+                {
+                    line.MarkNumber(nr);
+                    lineComplete = lineComplete || line.LineCompleted();
+                }
+                return lineComplete;
+            }
+
+            // Lines
+            public List<LineStruct> Lines;
+        }
+
+        private static int getFinalScore(List<string> inputs)
+        {
+            if(inputs.Count == 0) return 0;
+
+            // Read first line with selected numbers
+            var drawNrs = inputs[0].Split(",").Select(x => Convert.ToInt32(x)).ToList();
+            inputs.RemoveAt(0);
+
+            List<BoardStruct> boards = new List<BoardStruct>();
+
+            var count = inputs.Count;
+            int i = 0, boardIndex =0;
+
+            // read boards. each board is separated by an empty line.
+            while(i < count)
+            {
+                // skip empty rows
+                if (string.IsNullOrEmpty(inputs[i])) { i++; continue; }
+
+
+                var board = new BoardStruct();
+                
+                board.Index = boardIndex++;
+                board.Lines = new List<LineStruct>();
+
+                while(true)    // read board lines
+                {
+                    var lineStr = new LineStruct() { Line = new List<int>() };
+                    lineStr.Line = inputs[i].Split(" ").Where(x => !string.IsNullOrEmpty(x) ).Select(x => Convert.ToInt32(x)).ToList();
+                            
+                    board.Lines.Add(lineStr);
+
+                    i++;
+                    if ( i == count || string.IsNullOrEmpty(inputs[i]))
+                        break;
+                }
+
+                // Add columns lines
+                var cols = board.Lines[0].Line.Count;
+                board.Dimension = cols;
+
+                for (int j =0; j < cols; j++)
+                {
+                    var lineStr = new LineStruct() { Line = new List<int>() };
+                    for (int k = 0; k < cols; k++)
+                    {
+                        lineStr.Line.Add(board.Lines[k].Line[j]);
+                    }
+                    board.Lines.Add(lineStr);
+                }
+                boards.Add(board);
+            }
+
+            List<Tuple<BoardStruct, int>> wins = new List<Tuple<BoardStruct, int>>();
+            foreach (var nr in drawNrs)
+            {
+                // check if it is bingo
+                foreach(var board in boards)
+                {
+                    if (board.IsBingo(nr))
+                    {
+                        // #1
+                        //return board.Sum() * nr;
+
+                        // #2
+                        // Add boards only once...
+                        if(!wins.Exists( x=> x.Item1.Index == board.Index))
+                            wins.Add( new Tuple<BoardStruct, int>(board, board.Sum() * nr));
+                    }
+                }
+            }
+            //#1
+            // return 0;
+
+            // #2
+            return wins.Last().Item2;
+        }
+
+
+        // day 3 #2
         private static int calulateValues(List<string> inputs, int selector, int position, bool isOxygen)
         {
             if (inputs.Count == 1)
@@ -205,5 +342,11 @@ namespace Puzzle
             }
             return inputs;
         }
+
+        static IEnumerable<string> Split(string str, int chunkSize)
+{
+    return Enumerable.Range(0, str.Length / chunkSize)
+        .Select(i => str.Substring(i * chunkSize, chunkSize));
+}
     }
 }
