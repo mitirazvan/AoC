@@ -33,8 +33,136 @@ namespace Puzzle
             //Console.WriteLine($"Answer: {oxygen} * {co2} = {oxygen * co2}  ");
 
             // day 4 #1 #2
-            result = getFinalScore(inputs);
+            // result = getFinalScore(inputs);
+
+
+            // day 5 #1 
+            result = CalculateIntersections(inputs);
             Console.WriteLine($"Answer: {result}");
+        }
+
+        // day 5
+        struct Point
+        {
+            public int x, y;
+        }
+
+        struct Line
+        {
+            public Point Start, End;
+        }
+
+        private static int CalculateIntersections(List<string> inputs)
+        {
+            
+            var res = DecodeInput(inputs);
+            var board = new int[res.Item2][];
+            InitArray(res.Item2, ref board);
+
+            foreach (var line in res.Item1)
+            {
+                if (line.Start.x == line.End.x)  // straight vertical lines
+                {
+                    for (int i = Math.Min(line.Start.y, line.End.y); i <= Math.Max(line.Start.y, line.End.y); i++)
+                        board[i][line.Start.x]++;
+                }
+                else if(line.Start.y == line.End.y)  // straight horizontal lines
+                {
+                    for (int i = Math.Min(line.Start.x, line.End.x); i <= Math.Max(line.Start.x, line.End.x); i++)
+                        board[line.Start.y][i]++;
+                } 
+
+                // day 5 #2
+                // Diagonal lines
+                else if( Math.Abs(line.Start.x - line.End.x) == Math.Abs(line.Start.y - line.End.y))
+                {
+                    board[line.Start.y][line.Start.x]++;
+                    board[line.End.y][line.End.x]++;
+
+                    // calculate in-between points
+                    var distance = Math.Abs(line.Start.x - line.End.x);
+                    
+                    var diff_X = line.End.x - line.Start.x;
+                    var diff_Y = line.End.y - line.Start.y;
+
+                    var interval_X = diff_X / distance;
+                    var interval_Y = diff_Y / distance;
+                    
+                    for (int i = 1; i <= distance-1; i++)
+                    {
+                        var x = line.Start.x + interval_X * i;
+                        var y = line.Start.y + interval_Y * i;
+                        board[y][x]++;
+                    }
+                }
+            }
+
+            return WriteOutput(res.Item2, board);
+        }
+        private static void InitArray(int dimension, ref int[][] board)
+        {
+            for (int i = 0; i < dimension; i++)
+            {
+                var arr = new int[dimension];
+                for (int j = 0; j < dimension; j++)
+                {
+                    arr[j] = 0;
+                }
+                board[i] = arr;
+            }
+        }
+        private static int WriteOutput(int dimension, int[][] board)
+        {
+            int intersections = 0;
+            for (int i = 0; i < dimension; i++)
+            {
+                //oldM = max;
+                for (int j = 0; j < dimension; j++)
+                {
+                    if (dimension < 20)
+                    {
+                        var printChar = (board[i][j] == 0 ? "." : board[i][j].ToString());
+                        Console.Write(printChar);
+                    }
+
+                    if (board[i][j] >= 2)
+                    {
+                        intersections++;
+                    }
+                }
+                Console.WriteLine($"   -> I:{intersections}");
+            }
+            return intersections;
+        }
+
+        private static Tuple<List<Line>, int> DecodeInput(List<string> inputs)
+        {
+            // 0,9 -> 5,9
+            List<Line> lines = new List<Line>();
+            int max = 0;
+            foreach(var inp in inputs)
+            {
+                var line = inp.Split("->");
+                var start = line[0];
+                var end = line[1];
+
+                Point stPoint = new Point
+                {
+                    x = Convert.ToInt32(start.Split(',')[0]),
+                    y = Convert.ToInt32(start.Split(',')[1])
+                };
+
+                Point endPoint = new Point
+                {
+                    x = Convert.ToInt32(end.Split(',')[0]),
+                    y = Convert.ToInt32(end.Split(',')[1])
+                };
+
+                max = Math.Max(max, Math.Max(Math.Max(stPoint.x, stPoint.y), Math.Max(endPoint.x, endPoint.y)));
+
+                lines.Add(new Line { Start = stPoint, End = endPoint });
+            }
+            return new Tuple<List<Line>, int>(lines, max+1);
         }
 
         // day 4 #1 #2
@@ -343,10 +471,5 @@ namespace Puzzle
             return inputs;
         }
 
-        static IEnumerable<string> Split(string str, int chunkSize)
-{
-    return Enumerable.Range(0, str.Length / chunkSize)
-        .Select(i => str.Substring(i * chunkSize, chunkSize));
-}
     }
 }
