@@ -10,7 +10,7 @@ namespace Puzzle
     {
         static void Main(string[] args)
         {
-            var result = 0;
+            var result = 0.0;
 
             var inputs = ReadFile<string>();
 
@@ -36,9 +36,47 @@ namespace Puzzle
             // result = getFinalScore(inputs);
 
 
-            // day 5 #1 
-            result = CalculateIntersections(inputs);
+            // day 5 #1 #2
+            // result = CalculateIntersections(inputs);
+
+            // day 6 #1 #2
+            result = spawnLanternFish(inputs, 256);
+
             Console.WriteLine($"Answer: {result}");
+        }
+
+        // day 6
+        private static long spawnLanternFish(List<string> inputs, int daysCount)
+        {
+            // get initial school 
+            var fishList = inputs[0].Split(",").Select(x => Convert.ToByte(x)).ToList();
+            Console.WriteLine($"Initial state: {inputs[0]}");
+
+            List<long> days = new List<long>(new long[10]);
+            foreach (var f in fishList)
+            {
+                days[f]++;
+            }
+
+            for (int i = 1; i <= daysCount; i++)
+            {
+                List<long> extra = new List<long>(new long[10]);
+
+                // substract 1 day
+                for (int x = 1; x < 10; x++)
+                {
+                    extra[x - 1] += days[x];
+                }
+
+                extra[6] += days[0];
+                extra[8] += days[0];
+
+                for (int x = 0; x < 10; x++)
+                {
+                    days[x] = extra[x];
+                }
+            }
+            return days.Sum();
         }
 
         // day 5
@@ -54,7 +92,7 @@ namespace Puzzle
 
         private static int CalculateIntersections(List<string> inputs)
         {
-            
+
             var res = DecodeInput(inputs);
             var board = new int[res.Item2][];
             InitArray(res.Item2, ref board);
@@ -66,29 +104,29 @@ namespace Puzzle
                     for (int i = Math.Min(line.Start.y, line.End.y); i <= Math.Max(line.Start.y, line.End.y); i++)
                         board[i][line.Start.x]++;
                 }
-                else if(line.Start.y == line.End.y)  // straight horizontal lines
+                else if (line.Start.y == line.End.y)  // straight horizontal lines
                 {
                     for (int i = Math.Min(line.Start.x, line.End.x); i <= Math.Max(line.Start.x, line.End.x); i++)
                         board[line.Start.y][i]++;
-                } 
+                }
 
                 // day 5 #2
                 // Diagonal lines
-                else if( Math.Abs(line.Start.x - line.End.x) == Math.Abs(line.Start.y - line.End.y))
+                else if (Math.Abs(line.Start.x - line.End.x) == Math.Abs(line.Start.y - line.End.y))
                 {
                     board[line.Start.y][line.Start.x]++;
                     board[line.End.y][line.End.x]++;
 
                     // calculate in-between points
                     var distance = Math.Abs(line.Start.x - line.End.x);
-                    
+
                     var diff_X = line.End.x - line.Start.x;
                     var diff_Y = line.End.y - line.Start.y;
 
                     var interval_X = diff_X / distance;
                     var interval_Y = diff_Y / distance;
-                    
-                    for (int i = 1; i <= distance-1; i++)
+
+                    for (int i = 1; i <= distance - 1; i++)
                     {
                         var x = line.Start.x + interval_X * i;
                         var y = line.Start.y + interval_Y * i;
@@ -140,7 +178,7 @@ namespace Puzzle
             // 0,9 -> 5,9
             List<Line> lines = new List<Line>();
             int max = 0;
-            foreach(var inp in inputs)
+            foreach (var inp in inputs)
             {
                 var line = inp.Split("->");
                 var start = line[0];
@@ -162,7 +200,7 @@ namespace Puzzle
 
                 lines.Add(new Line { Start = stPoint, End = endPoint });
             }
-            return new Tuple<List<Line>, int>(lines, max+1);
+            return new Tuple<List<Line>, int>(lines, max + 1);
         }
 
         // day 4 #1 #2
@@ -171,7 +209,7 @@ namespace Puzzle
         {
             public bool LineCompleted()
             {
-                if( Line ==null)
+                if (Line == null)
                     return false;
                 return Line.Count == 0;
             }
@@ -181,7 +219,7 @@ namespace Puzzle
                 return Line.Remove(nr);
             }
 
-            public List<int> Line; 
+            public List<int> Line;
         }
 
         struct BoardStruct
@@ -192,12 +230,12 @@ namespace Puzzle
 
             public int Sum()
             {
-                if(Lines == null)
+                if (Lines == null)
                     return 0;
 
                 int sum = 0;
-                for(int b=0; b < Dimension; b++)
-                    foreach(var nr in Lines[b].Line)
+                for (int b = 0; b < Dimension; b++)
+                    foreach (var nr in Lines[b].Line)
                     {
                         sum += nr;
                     }
@@ -207,7 +245,7 @@ namespace Puzzle
             public bool IsBingo(int nr)
             {
                 bool lineComplete = false;
-                foreach(var line in Lines)
+                foreach (var line in Lines)
                 {
                     line.MarkNumber(nr);
                     lineComplete = lineComplete || line.LineCompleted();
@@ -221,7 +259,7 @@ namespace Puzzle
 
         private static int getFinalScore(List<string> inputs)
         {
-            if(inputs.Count == 0) return 0;
+            if (inputs.Count == 0) return 0;
 
             // Read first line with selected numbers
             var drawNrs = inputs[0].Split(",").Select(x => Convert.ToInt32(x)).ToList();
@@ -230,29 +268,29 @@ namespace Puzzle
             List<BoardStruct> boards = new List<BoardStruct>();
 
             var count = inputs.Count;
-            int i = 0, boardIndex =0;
+            int i = 0, boardIndex = 0;
 
             // read boards. each board is separated by an empty line.
-            while(i < count)
+            while (i < count)
             {
                 // skip empty rows
                 if (string.IsNullOrEmpty(inputs[i])) { i++; continue; }
 
 
                 var board = new BoardStruct();
-                
+
                 board.Index = boardIndex++;
                 board.Lines = new List<LineStruct>();
 
-                while(true)    // read board lines
+                while (true)    // read board lines
                 {
                     var lineStr = new LineStruct() { Line = new List<int>() };
-                    lineStr.Line = inputs[i].Split(" ").Where(x => !string.IsNullOrEmpty(x) ).Select(x => Convert.ToInt32(x)).ToList();
-                            
+                    lineStr.Line = inputs[i].Split(" ").Where(x => !string.IsNullOrEmpty(x)).Select(x => Convert.ToInt32(x)).ToList();
+
                     board.Lines.Add(lineStr);
 
                     i++;
-                    if ( i == count || string.IsNullOrEmpty(inputs[i]))
+                    if (i == count || string.IsNullOrEmpty(inputs[i]))
                         break;
                 }
 
@@ -260,7 +298,7 @@ namespace Puzzle
                 var cols = board.Lines[0].Line.Count;
                 board.Dimension = cols;
 
-                for (int j =0; j < cols; j++)
+                for (int j = 0; j < cols; j++)
                 {
                     var lineStr = new LineStruct() { Line = new List<int>() };
                     for (int k = 0; k < cols; k++)
@@ -276,7 +314,7 @@ namespace Puzzle
             foreach (var nr in drawNrs)
             {
                 // check if it is bingo
-                foreach(var board in boards)
+                foreach (var board in boards)
                 {
                     if (board.IsBingo(nr))
                     {
@@ -285,8 +323,8 @@ namespace Puzzle
 
                         // #2
                         // Add boards only once...
-                        if(!wins.Exists( x=> x.Item1.Index == board.Index))
-                            wins.Add( new Tuple<BoardStruct, int>(board, board.Sum() * nr));
+                        if (!wins.Exists(x => x.Item1.Index == board.Index))
+                            wins.Add(new Tuple<BoardStruct, int>(board, board.Sum() * nr));
                     }
                 }
             }
