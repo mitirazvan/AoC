@@ -40,10 +40,43 @@ namespace Puzzle
             // result = CalculateIntersections(inputs);
 
             // day 6 #1 #2
-            result = spawnLanternFish(inputs, 256);
+            // result = spawnLanternFish(inputs, 256);
+
+            // day 7 #1 #2
+            result = calulateFuel(inputs);
+
 
             Console.WriteLine($"Answer: {result}");
         }
+
+        // day 7
+        private static long calulateFuel(List<string> inputs)
+        {
+            var pos = inputs[0].Split(",").Select(x => Convert.ToInt32(x)).ToList();
+            var max = pos.Max();
+
+            int sum = 0, minSum = int.MaxValue;
+            for (int i = 1; i <= max; i++)
+            {
+                foreach (var p in pos)
+                {
+                    var n = Math.Abs(p - i);
+                    // #1
+                    //sum += n;
+
+                    // #2
+                    sum += (n * (n + 1)) / 2;
+                }
+
+                if (minSum > sum)
+                    minSum = sum;
+                sum = 0;
+            }
+
+            return minSum;
+        }
+
+
 
         // day 6
         private static long spawnLanternFish(List<string> inputs, int daysCount)
