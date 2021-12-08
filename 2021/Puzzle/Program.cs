@@ -12,6 +12,7 @@ namespace Puzzle
         {
             var result = 0.0;
 
+            var inputsEx = ReadFile<string>("example.txt");
             var inputs = ReadFile<string>();
 
             // day 1
@@ -43,14 +44,138 @@ namespace Puzzle
             // result = spawnLanternFish(inputs, 256);
 
             // day 7 #1 #2
-            result = calulateFuel(inputs);
+            //result = calulateFuel(inputs);
 
+            // Day 8 #1 #2 7-segments
+            result = countDigits1(inputs);
+            result = countDigits2(inputsEx);
 
             Console.WriteLine($"Answer: {result}");
         }
 
+        // day 8 #2
+
+        private static string SortString(string input)
+        {
+            char[] characters = input.ToArray();
+            Array.Sort(characters);
+            return new string(characters);
+        }
+
+        private static int decodeDigits(string inputs)
+        {                                    //  0       1      2        3        4       5       6         7       8          9
+            string[] originalDigits = new[] { "abcefg", "cf", "acdeg", "acdfg", "bcdf", "abdfg", "abdefg", "acf", "abcdefg", "abcdfg" };
+
+            Dictionary<char, char> encoding = new Dictionary<char, char>
+            {
+                { 'a', 'x'},
+                { 'b', 'x'},
+                { 'c', 'x'},
+                { 'd', 'x'},
+                { 'e', 'x'},
+                { 'f', 'x'},
+                { 'g', 'x'},
+            };
+
+            var firstHalf = inputs.Split("|")[0].Split(" ");
+            var secondHalf = inputs.Split("|")[1].Split(" ");
+
+            // 2, 3, 4, 5, 6, 7
+
+            int retry = 0, i = 2;
+            bool decoding = true;
+            while (decoding)
+            {
+                // search for solutions:
+
+                // get digits
+                var digits = firstHalf.Where(x => x.Length == i).ToList();
+
+                bool error = false;
+                foreach (var d in digits)
+                {
+                    // can be decoded
+
+                }
+
+                // is decoding done
+                decoding = false;
+            }
+
+
+            return 0;
+        }
+
+        private static int countDigits2(List<string> inputs)
+        {
+            //Nr  NrOfSeg SegLines
+
+            // 1  2seg cf
+            // 7  3seg acf
+            // 4  4seg bcdf
+            // 2  5seg acdeg
+            // 3  5seg acdfg
+            // 5  5seg abdfg
+            // 6  6seg abdefg
+            // 0  6seg abcefg
+            // 9  6seg abcdfg
+            // 8  7seg abcdefg
+
+            // 1  4    7   8            
+            // cf bcdf acf abcdefg
+
+            var sum = 0;
+            // Get the encoding
+            foreach (var line in inputs)
+            {
+                //var digits = line.Split(" ").OrderBy(x => x.Length);
+
+                //// get d bar from 8 - 0
+                //var d1 = digits.FirstOrDefault(x => x.Length == originalDigits[8].Length);
+                //var d4 = digits.FirstOrDefault(x => x.Length == originalDigits[8].Length);
+                //var d7 = digits.FirstOrDefault(x => x.Length == originalDigits[8].Length);
+                //var d8 = digits.FirstOrDefault(x => x.Length == originalDigits[8].Length);
+
+                sum = decodeDigits(line);
+
+
+                //foreach (var uni in unique)
+                //{
+                //    var d = digits.FirstOrDefault(x => x.Length == originalDigits[uni].Length);
+                //    if (!string.IsNullOrEmpty(d))
+                //    {
+                //        // decode d1
+                //        for (int i = 0; i < originalDigits[uni].Length; i++)
+                //        {
+                //            encoding[originalDigits[uni][i]] = d[i];
+                //        }
+                //    }
+                //}
+            }
+
+            return sum;
+        }
+        // #1
+        private static int countDigits1(List<string> inputs)
+        {
+            string[] originalDigits = new[] { "abcefg", "cf", "acdeg", "acdfg", "bcdf", "abdfg", "abdefg", "acf", "abcdefg", "abcdfg" };
+
+            var secondHalf = inputs.Select(x => x.Split("|")[1]);
+            var sum = 0;
+            foreach (var line in secondHalf)
+            {
+                var digits = line.Split(" ");
+                sum += digits.Count(x => x.Length == originalDigits[1].Length);
+                sum += digits.Count(x => x.Length == originalDigits[4].Length);
+                sum += digits.Count(x => x.Length == originalDigits[7].Length);
+                sum += digits.Count(x => x.Length == originalDigits[8].Length);
+            }
+
+            return sum;
+        }
+
         // day 7
-        private static long calulateFuel(List<string> inputs)
+        private static int calulateFuel(List<string> inputs)
         {
             var pos = inputs[0].Split(",").Select(x => Convert.ToInt32(x)).ToList();
             var max = pos.Max();
@@ -517,13 +642,13 @@ namespace Puzzle
         }
 
         // tools
-        private static List<T> ReadFile<T>() where T : IConvertible
+        private static List<T> ReadFile<T>(string fileName = "input.txt") where T : IConvertible
         {
             List<T> inputs = new List<T>();
             var count = 0;
             try
             {
-                foreach (object line in File.ReadLines("input.txt"))
+                foreach (object line in File.ReadLines(fileName))
                 {
                     Console.WriteLine($"{count++}. " + line);
                     if (typeof(T) == typeof(int))
