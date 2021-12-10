@@ -48,23 +48,51 @@ namespace Puzzle
 
             // Day 8 #1 #2 7-segments
             result = countDigits1(inputs);
-            result = countDigits2(inputsEx);
+            result = countDigits2(inputs);
 
             Console.WriteLine($"Answer: {result}");
         }
 
         // day 8 #2
 
-        private static string SortString(string input)
+        private static string SubstractString(string source, string input)
         {
-            char[] characters = input.ToArray();
-            Array.Sort(characters);
-            return new string(characters);
+            source = new string((from c in source.AsEnumerable<char>()
+                                 where !input.Contains(c)
+                                 select c).ToArray());
+
+            return source;
         }
 
-        private static int decodeDigits(string inputs)
-        {                                    //  0       1      2        3        4       5       6         7       8          9
-            string[] originalDigits = new[] { "abcefg", "cf", "acdeg", "acdfg", "bcdf", "abdfg", "abdefg", "acf", "abcdefg", "abcdfg" };
+        private static string IntersectStrings(string source, string input)
+        {
+            source = new string((from c in source.AsEnumerable<char>()
+                                 where input.Contains(c)
+                                 select c).ToArray());
+
+            return source;
+        }
+
+        private static bool ContainsString(string source, string input)
+        {
+            var length = source.Length;
+            var newSrc = SubstractString(source, input);
+            return length == (newSrc.Length + input.Length);
+        }
+
+        private static string decodeOneDigit(string input, Dictionary<char, char> keys)
+        {
+            var source = new string((from c in input.AsEnumerable<char>()
+                                     select keys.FirstOrDefault(x => x.Value == c).Key).ToArray());
+            return source;
+        }
+
+        private static string decodeDigits(string inputs)
+        {
+            Dictionary<int, string> originalDigits = new Dictionary<int, string>
+                { { 0, "abcefg"}, { 1,"cf"}, { 2,"acdeg"}, { 3,"acdfg"},{ 4, "bcdf"},{ 5, "abdfg"},{ 6, "abdefg"},{ 7, "acf"},{ 8, "abcdefg"}, { 9,"abcdfg" } };
+
+            string foundDigits = "";
 
             Dictionary<char, char> encoding = new Dictionary<char, char>
             {
@@ -80,31 +108,85 @@ namespace Puzzle
             var firstHalf = inputs.Split("|")[0].Split(" ");
             var secondHalf = inputs.Split("|")[1].Split(" ");
 
-            // 2, 3, 4, 5, 6, 7
+            // 1. A
+            var d1 = firstHalf.FirstOrDefault(x => x.Length == originalDigits[1].Length);
+            var d7 = firstHalf.FirstOrDefault(x => x.Length == originalDigits[7].Length);
+            var d8 = firstHalf.FirstOrDefault(x => x.Length == originalDigits[8].Length);
 
-            int retry = 0, i = 2;
-            bool decoding = true;
-            while (decoding)
-            {
-                // search for solutions:
+            encoding['a'] = SubstractString(d7, d1)[0];
+            foundDigits += encoding['a'];
 
-                // get digits
-                var digits = firstHalf.Where(x => x.Length == i).ToList();
+            // 2. F
+            var d4 = firstHalf.FirstOrDefault(x => x.Length == originalDigits[4].Length);
+            var dBD = SubstractString(d4, d1);
 
-                bool error = false;
-                foreach (var d in digits)
+            var d235 = firstHalf.Where(x => x.Length == 5);
+            var d5 = string.Empty;
+
+            foreach (var x in d235)
+                if (ContainsString(x, dBD))
                 {
-                    // can be decoded
-
+                    d5 = x;
+                    break;
                 }
 
-                // is decoding done
-                decoding = false;
+            encoding['f'] = IntersectStrings(d1, d5)[0];
+            foundDigits += encoding['f'];
+
+            // 3. C  
+            encoding['c'] = SubstractString(d1, encoding['f'].ToString())[0];
+            foundDigits += encoding['c'];
+
+            // 4. D
+            int count = 0;
+            string letter = string.Empty;
+            foreach (var bd in dBD.AsEnumerable())
+            {
+                foreach (var x in d235)
+                {
+                    if (ContainsString(x, bd.ToString()))
+                    {
+                        count++;
+                        if (count == 3)
+                        {
+                            letter = bd.ToString();
+                            break;
+                        }
+                    }
+                }
+                count = 0;
+            }
+            encoding['d'] = letter[0];
+            foundDigits += encoding['d'];
+
+            // 5. B
+            encoding['b'] = SubstractString(dBD, encoding['d'].ToString())[0];
+            foundDigits += encoding['b'];
+
+            // 6. G
+            encoding['g'] = SubstractString(d5, foundDigits)[0];
+            foundDigits += encoding['g'];
+
+            // 7.  E
+            encoding['e'] = SubstractString(d8, foundDigits)[0];
+            foundDigits += encoding['e'];
+
+
+            // decode second half
+            string returnValue = string.Empty;
+            foreach (var dec in secondHalf)
+            {
+                var decodedDigit = decodeOneDigit(dec, encoding);
+
+                var key = originalDigits.FirstOrDefault(x => SubstractString(x.Value, decodedDigit).Length == 0 && SubstractString(x.Value, decodedDigit).Length == SubstractString(decodedDigit, x.Value).Length).Key;
+                returnValue += key;
             }
 
 
-            return 0;
+            return returnValue;
         }
+
+
 
         private static int countDigits2(List<string> inputs)
         {
@@ -128,29 +210,9 @@ namespace Puzzle
             // Get the encoding
             foreach (var line in inputs)
             {
-                //var digits = line.Split(" ").OrderBy(x => x.Length);
-
-                //// get d bar from 8 - 0
-                //var d1 = digits.FirstOrDefault(x => x.Length == originalDigits[8].Length);
-                //var d4 = digits.FirstOrDefault(x => x.Length == originalDigits[8].Length);
-                //var d7 = digits.FirstOrDefault(x => x.Length == originalDigits[8].Length);
-                //var d8 = digits.FirstOrDefault(x => x.Length == originalDigits[8].Length);
-
-                sum = decodeDigits(line);
-
-
-                //foreach (var uni in unique)
-                //{
-                //    var d = digits.FirstOrDefault(x => x.Length == originalDigits[uni].Length);
-                //    if (!string.IsNullOrEmpty(d))
-                //    {
-                //        // decode d1
-                //        for (int i = 0; i < originalDigits[uni].Length; i++)
-                //        {
-                //            encoding[originalDigits[uni][i]] = d[i];
-                //        }
-                //    }
-                //}
+                var nr = decodeDigits(line);
+                Console.WriteLine($"Line: {line} and number is: {nr}");
+                sum += Convert.ToInt32(nr);
             }
 
             return sum;
