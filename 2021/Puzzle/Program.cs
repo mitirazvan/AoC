@@ -12,8 +12,9 @@ namespace Puzzle
         {
             var result = 0.0;
 
-            var inputsEx = ReadFile<string>("example.txt");
+            var inputsEx = ReadFile<string>(true, "example.txt");
             var inputs = ReadFile<string>();
+            Console.WriteLine("----------------------------");
 
             // day 1
             // var newList = groupBy3(inputs);
@@ -51,12 +52,161 @@ namespace Puzzle
             //result = countDigits2(inputs);
 
             // Day 9 #1
-            result = calculateRisk(inputs);
-
+            //result = calculateRisk(inputs);
+            result = calculateBasins(inputs);
 
             Console.WriteLine($"Answer: {result}");
         }
 
+
+        // Day 9 #1
+        struct BasinLine
+        {
+            public List<int> Line;
+            public int IndexStart;
+            public int IndexEnd;
+            public int Row;
+        }
+
+        private static int calculateBasins(List<string> inputs)
+        {
+            var result = decodeRisks(inputs);
+            var matrix = result.Item1;
+            var columns = result.Item2;
+            var rows = result.Item3;
+
+
+            // get all lines
+            
+            List<int> mins = new List<int>();
+            BasinLine bline = new BasinLine
+            {
+                Line = new List<int>(),
+            };
+
+            bool isNew = true;
+            int index;
+            // get lines
+            List<BasinLine> basinLines = new List<BasinLine>();
+            for (int i = 0; i < rows; i++)
+            { 
+                for (int j = 0; j < columns; j++)
+                {
+                    index = i * columns + j;
+
+                    if (matrix[index] < 9)
+                    {
+                        if (isNew)
+                        {
+                            bline = new BasinLine
+                            {
+                                Line = new List<int>(),
+                                IndexStart = index,
+                                Row = i,
+                            };
+                            isNew = false;
+                        }
+                        bline.IndexEnd = index;
+                        bline.Line.Add(matrix[index]);
+                    }
+                    else
+                    {
+                        if (!isNew)
+                        {
+                            isNew = true;
+                            basinLines.Add(bline);
+                            PrintBasinLine(columns, bline);
+                        }
+                    }
+                }
+                if (!isNew)
+                {
+                    isNew = true;
+                    basinLines.Add(bline);
+                    PrintBasinLine(columns, bline);
+                }
+            }
+
+            // detect close lines to form a basin
+            List<List<BasinLine>> basins = new List<List<BasinLine>>();
+            for (int i = 0; i < basinLines.Count; i++)
+            {
+                var lineList = findLine(basins, basinLines[i]);
+                if (lineList.Count == 0) 
+                { 
+                    lineList = new List<BasinLine> { basinLines[i] };
+                    basins.Add(lineList); 
+                }
+
+                // search on next row
+                var nextRowLines = basinLines.Where(x => x.Row == basinLines[i].Row + 1);
+
+                foreach (var nextRowLine in nextRowLines)
+                {
+                    if ((nextRowLine.IndexStart % columns <= basinLines[i].IndexEnd % columns && nextRowLine.IndexStart % columns >= basinLines[i].IndexStart % columns) ||
+                        (basinLines[i].IndexStart % columns <= nextRowLine.IndexEnd % columns && basinLines[i].IndexStart % columns >= nextRowLine.IndexStart % columns))
+                    {
+
+                        var existingList = findLine(basins, nextRowLine);
+                        if (existingList.Count > 0)
+                        {
+                            basins.Remove(lineList);
+                            existingList.AddRange(lineList);
+                        }
+                        else
+                            lineList.Add(nextRowLine);
+                    }
+                }
+            }
+
+            Console.WriteLine("");
+            //test
+            List<int> vs = new List<int>();
+            foreach (var basin in basins)
+            {
+                int count = 0;
+                foreach(var line in basin)
+                {
+                    PrintBasinLine(columns, line);
+                    count+= line.Line.Count;
+                }
+
+                vs.Add(count);
+                Console.WriteLine("---------------");
+            }
+            var multiply = vs.OrderByDescending(x => x).Take(3).Aggregate((x, y) => x * y);
+
+            return multiply;
+        }
+
+        private static List<BasinLine> findLine(List<List<BasinLine>> mainList, BasinLine find)
+        {
+            foreach(var line in mainList)
+            {
+                if(line.Contains(find))
+                    return line;
+            }
+
+            
+            return new List<BasinLine>();
+        }
+
+        private static void PrintBasinLine(int columns, BasinLine bline)
+        {
+            string console = string.Empty;
+            int lineIndex = 0;
+            for (int x = 0; x < columns; x++)
+            {
+                if (bline.IndexStart % columns <= x && bline.IndexEnd % columns >= x)
+                    console += bline.Line[lineIndex++].ToString();
+                else
+                    console += ".";
+            }
+            Console.WriteLine(console);
+        }
+
+
+        // Day 9 #1
 
         private static int SafeArrayCompareUpDown(List<int> matrix, int index2, int index1, int cols)
         {       // up           down            
@@ -74,8 +224,7 @@ namespace Puzzle
             return matrix[index2] < matrix[index1] ? 1 : 0;
         }
 
-        // Day 9 #1
-        private static int calculateRisk(List<string> inputs)
+        private static Tuple<List<int>, int, int> decodeRisks(List<string> inputs)
         {
             List<int> matrix = new List<int>();
             var rows = 0;
@@ -85,6 +234,15 @@ namespace Puzzle
                 matrix.AddRange((from x in line.AsQueryable<char>() select Convert.ToInt32(x.ToString())));
             }
             var columns = matrix.Count / rows;
+
+            return Tuple.Create( matrix, columns, rows);
+        }
+
+        private static int calculateRisk(List<string> inputs)
+        {
+            var result = decodeRisks(inputs);
+            var matrix = result.Item1;
+            var columns = result.Item2;
 
 
             List<int> mins = new List<int>();
@@ -759,7 +917,7 @@ namespace Puzzle
         }
 
         // tools
-        private static List<T> ReadFile<T>(string fileName = "input.txt") where T : IConvertible
+        private static List<T> ReadFile<T>(bool print = false, string fileName = "input.txt") where T : IConvertible
         {
             List<T> inputs = new List<T>();
             var count = 0;
@@ -767,7 +925,8 @@ namespace Puzzle
             {
                 foreach (object line in File.ReadLines(fileName))
                 {
-                    Console.WriteLine($"{count++}. " + line);
+                    if(print) Console.WriteLine($"{count++}. " + line);
+
                     if (typeof(T) == typeof(int))
                     {
                         inputs.Add((T)Convert.ChangeType(line, typeof(T)));
