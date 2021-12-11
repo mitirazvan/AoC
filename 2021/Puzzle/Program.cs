@@ -47,10 +47,65 @@ namespace Puzzle
             //result = calulateFuel(inputs);
 
             // Day 8 #1 #2 7-segments
-            result = countDigits1(inputs);
-            result = countDigits2(inputs);
+            //result = countDigits1(inputs);
+            //result = countDigits2(inputs);
+
+            // Day 9 #1
+            result = calculateRisk(inputs);
+
 
             Console.WriteLine($"Answer: {result}");
+        }
+
+
+        private static int SafeArrayCompareUpDown(List<int> matrix, int index2, int index1, int cols)
+        {       // up           down            
+            if ((index1 < 0 || index1 >= matrix.Count))
+                return -1;
+
+            return matrix[index2] < matrix[index1] ? 1 : 0;
+        }
+
+        private static int SafeArrayCompareLeftRight(List<int> matrix, int index2, int index1, int cols)
+        {       // up           down            
+            if (index1 < 0 || index1 / cols != index2 / cols)
+                return -1;
+
+            return matrix[index2] < matrix[index1] ? 1 : 0;
+        }
+
+        // Day 9 #1
+        private static int calculateRisk(List<string> inputs)
+        {
+            List<int> matrix = new List<int>();
+            var rows = 0;
+            foreach (var line in inputs)
+            {
+                rows++;
+                matrix.AddRange((from x in line.AsQueryable<char>() select Convert.ToInt32(x.ToString())));
+            }
+            var columns = matrix.Count / rows;
+
+
+            List<int> mins = new List<int>();
+            int up, down, left, right;
+            for (int i = 0; i < matrix.Count; i++)
+            {
+                // is matrix[i] the smallest number?                
+                up = SafeArrayCompareUpDown(matrix, i, i - columns, columns); // UP                
+                down = SafeArrayCompareUpDown(matrix, i, i + columns, columns);
+                left = SafeArrayCompareLeftRight(matrix, i, i - 1, columns);
+                right = SafeArrayCompareLeftRight(matrix, i, i + 1, columns);
+
+                if ((up == 1 || up == -1) &&
+                   (down == 1 || down == -1) &&
+                   (left == 1 || left == -1) &&
+                   (right == 1 || right == -1))
+                    mins.Add(matrix[i] + 1);
+            }
+
+
+            return mins.Sum();
         }
 
         // day 8 #2
